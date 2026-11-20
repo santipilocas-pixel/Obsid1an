@@ -12,18 +12,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check Xcode
-        run: xcodebuild -version
-
-      - name: Find Xcode project
-        run: find . -name "*.xcodeproj" -print
-
-      - name: Find build schemes
+      - name: Build IPA
         run: |
-          PROJECT=$(find . -name "Obsid1an.xcodeproj" -print -quit)
-          if [ -z "$PROJECT" ]; then
-            echo "Xcode project not found"
+          PROJECT="app/Obsid1an.xcodeproj"
+
+          xcodebuild \
+            -project "$PROJECT" \
+            -scheme "Obsid1an" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Obsid1an.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+          mkdir -p Payload
+          APP=$(find "$RUNNER_TEMP/Obsid1an.xcarchive/Products/Applications" -maxdepth 1 -name "*.app" -print -quit)
+
+          if [ -z "$APP" ]; then
+            echo "App not found in archive"
             exit 1
           fi
-          echo "Project found: $PROJECT"
-          xcodebuild -list -project "$PROJECT"
+
+          cp -R "$APP" Payload/
+          zip -r Obsid1an.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Obsid1an-IPA
+          path: Obsid1an.ipa
+          if-no-files-found: error
