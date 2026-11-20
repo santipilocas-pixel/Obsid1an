@@ -1,0 +1,29 @@
+
+name: Build Obsid1an IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Xcode
+        run: xcodebuild -version
+
+      - name: Find Xcode project
+        run: find . -name "*.xcodeproj" -print
+
+      - name: Find build schemes
+        run: |
+          PROJECT=$(find . -name "Obsid1an.xcodeproj" -print -quit)
+          if [ -z "$PROJECT" ]; then
+            echo "Xcode project not found"
+            exit 1
+          fi
+          echo "Project found: $PROJECT"
+          xcodebuild -list -project "$PROJECT"
